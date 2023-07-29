@@ -75,9 +75,12 @@ public class SendMail {
 			}
 			message.setSubject(subject);
 			VelocityEngine engine = new VelocityEngine();
-			engine.init();
+			Properties props = new Properties();
+			props.setProperty("resource.loader", "file");
+			props.setProperty("file.resource.loader.path", "/home/lakshmikommalapati/Documents/uphrhrepo/grievance-service/public/emails/");
+			engine.init(props);
 			String templatePath = EMAILS;
-			Template template = engine.getTemplate(templatePath + templateName);
+			Template template = engine.getTemplate( templateName);
 			StringWriter writer = new StringWriter();
 			template.merge(context, writer);
 			message.setContent(writer.toString(), TEXT_HTML);

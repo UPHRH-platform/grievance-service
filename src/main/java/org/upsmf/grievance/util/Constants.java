@@ -245,7 +245,7 @@ public class Constants {
 		}
 
 		public static final String HOST = "smtp.sendgrid.net";
-		public static final int PORT = 465;
+		public static final int PORT =  587;
 		public static final boolean SSL = true;
 		public static final String USER = "apikey";
 		public static final String PSWRD = "";

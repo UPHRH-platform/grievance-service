@@ -36,8 +36,8 @@ public final class Sql {
 		public static final String UPDATE_PSWRD = "UPDATE password SET pwd=?,updated_date=? WHERE user_id=? and pwd=?";
 		public static final String CHECK_USER_BY_USERNAME = "SELECT id from user where username=?";
 		public static final String SAVE_FORGOT_PSWRD = "UPDATE password SET pwd=? , updated_date=? WHERE user_id= ? ";
-		public static final String GET_USER_DETAIL_BY_EMAIL = "Select id, name, username, phone, is_active as isActive, created_date as createdDate, updated_date as updatedDate, img_path as imagePath from user where username=?";
-		public static final String GET_ORG_ID_BY_USER_ID = "SELECT org_id FROM user JOIN user_org where user.id=user_org.user_id and user.id=?";
+		public static final String GET_USER_DETAIL_BY_EMAIL = "Select \"user\".id, name, username, phone, is_active as isActive, created_date as createdDate, updated_date as updatedDate, img_path as imagePath from \"user\" where username=?";
+		public static final String GET_ORG_ID_BY_USER_ID = "SELECT org_id FROM \"user\", \"user_org\" where \"user\".id=user_org.user_id and \"user\".id=?";
 		public static final String GET_ALL_USERS_BY_ORG = "Select user.id, name, username, phone, is_active, img_path, created_date, updated_date from user JOIN user_org where user.id=user_org.user_id and user.is_active is true and user_org.org_id=?";
 		public static final String GET_IMAGE_PATH = "SELECT img_path from user where id=?;";
 		public static final String ORGADMIN = "ORGADMIN";
@@ -135,7 +135,7 @@ public final class Sql {
 		public static final String GET_WORKFLOW_FOR_TICKET_LIST = "SELECT t.id, ticket_id as ticketId, workflow_id as workFlowId, name, time, status FROM ticket_workflow t, workflow_stage w where w.id=t.workflow_id and ticket_id IN ";
 
 		public static final String GET_HELPDESK_BY_USER_ID = "SELECT hlpdsk.id as id, hlpdsk.helpdesk_name as name, hlpdsk.is_active as isActive, hlpdsk.color as color from helpdesk hlpdsk where id IN (SELECT distinct id FROM helpdesk AS h LEFT JOIN helpdesk_admin AS ha ON h.id=ha.helpdesk_id LEFT JOIN helpdesk_users AS hu ON h.id = hu.helpdesk_id where is_active is true and (ha.user_id=? or hu.user_id=?)) or allow_all_users is true and is_active is true and org_id=?";
-		public static final String GET_HELPDESK_USER_BY_ID = " SELECT id as id, name as name, username as userName, img_path from user where id IN (select user_id from helpdesk_users where helpdesk_id = ? )  ";
+		public static final String GET_HELPDESK_USER_BY_ID = " SELECT \"user\".id as id, name as name, username as userName, img_path from \"user\" where id IN (select user_id from helpdesk_users where helpdesk_id = ?) ";
 		public static final String DELETE_CHECKLIST_FOR_TICKET = "DELETE from ticket_checklist WHERE ticket_id = ?";
 		public static final String GET_HELPDESK_ADMIN_BY_ID = " SELECT id as id, name as name, username as userName, img_path from user where id IN (select user_id from helpdesk_admin where helpdesk_id = ? )  ";
 		public static final String GET_APP_ORG_ID = "SELECT org_id FROM organization_app where app_id=?;";
@@ -209,9 +209,8 @@ public final class Sql {
 		}
 
 		public static final String SELECT_USER_BY_TOKEN = "SELECT \"user\".id as id FROM \"user\",\"user_authentication\" WHERE auth_token = ? and \"user\".is_active is true and \"user\".id=user_authentication.user_id;";
-		public static final String SELECT_USER_ON_USERNAME = "SELECT user.id as id, user.name as name, user.username as username, user_org.org_id as orgId, "
-				+ " user.is_active as isActive, pwd.pwd as password from user, user_org, password pwd where "
-				+ " user.id = user_org.user_id and pwd.user_id = user.id and username = ?";
+		public static final String SELECT_USER_ON_USERNAME = "SELECT \"user\".id as id, \"user\".name as name, \"user\".username as username, user_org.org_id as orgId, \"user\".is_active as isActive, pwd.pwd as password from \"user\", user_org, " +
+				"password pwd where \"user\".id = user_org.user_id and pwd.user_id = \"user\".id and username =?";
 		public static final String SELECT_USER_ROLES_ON_USERNAME = "SELECT usr.id as id, usr.name as name, usr.username as username, usr.is_active as isActive, "
 				+ " usrorg.org_id as orgId, " + " pwd.pwd as password, "
 				+ " role.role_name as roleName, role.id as roleId, role.org_id as roleOrgId "
@@ -240,7 +239,7 @@ public final class Sql {
 		public static final String GET_USER_ACTIONS = "Select action.id, action.display_name as displayName, name, url from action inner join role_action on role_action.action_id = action.id where role_action.role_id = ?";
 		public static final String USER_PROFILE_FETCH = "select * from user usr where id=? ";
 		public static final String USER_DATA = "select COUNT(*) from user where username=?";
-		public static final String USER = "select * from user where id=?";
+		public static final String USER = "select * from \"user\" where \"user\".id=?";
 		public static final String GET_USER_AUTH_DETAILS = "SELECT id, user_id as userId, auth_token FROM user_authentication WHERE id=?";
 		public static final String SAVE_USER = "INSERT INTO user(name,username,phone,img_path) VALUES (?,?,?,?)";
 		public static final String SAVE_ANONYMOUS_USER = "INSERT INTO user(name,username,phone,img_path,is_anonymous) VALUES (?,?,?,?,?)";
