@@ -111,6 +111,7 @@ public class SuperAdminDaoImpl implements SuperAdminDao {
 				new Object[] { organization.getOrgName() }, MasterDataManager.rowMapOrganizationModel);
 		if (list == null || list.isEmpty()) {
 			Long userId = newOrgCreateAdmin(organization);
+			Long nodalUserId = newOrgCreateNodalOffice(organization);
 			if (userId == null) {
 				return null;
 			}
@@ -148,6 +149,36 @@ public class SuperAdminDaoImpl implements SuperAdminDao {
 		return null;
 	}
 
+	private Long newOrgCreateNodalOffice(final Organization org) {
+		KeyHolder keyHolder = KeyFactory.getkeyHolder();
+		try {
+			Long list = jdbcTemplate.queryForObject(Sql.UserQueries.USER_DATA,
+					new Object[] { org.getAdminDetails().get(0).getUsername() }, Long.class);
+			if (list == 0) {
+				jdbcTemplate.update(new PreparedStatementCreator() {
+					@Override
+					public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+						String[] returnValColumn = new String[] { "id" };
+						PreparedStatement statement = connection.prepareStatement(Sql.Organization.NEW_GRIEVANCE_ADMIN_USER,
+								returnValColumn);
+						statement.setString(1, org.getAdminDetails().get(0).getName());
+						statement.setString(2, org.getAdminDetails().get(0).getUsername());
+						statement.setString(3, org.getAdminDetails().get(0).getPhone());
+						statement.setString(4, org.getAdminDetails().get(0).getImagePath());
+						return statement;
+					}
+				}, keyHolder);
+				return keyHolder.getKey().longValue();
+			}
+			MasterDataManager.getAllUserRoles();
+		} catch (Exception e) {
+			LOGGER.error(
+					String.format("Encountered an Exception while Adding an Admin for New Org :  %s", e.getMessage()));
+		}
+
+		return null;
+	}
+
 	public Long newOrgCreateAdmin(final Organization org) {
 		KeyHolder keyHolder = KeyFactory.getkeyHolder();
 		try {
@@ -179,6 +210,57 @@ public class SuperAdminDaoImpl implements SuperAdminDao {
 	}
 
 	public void orgSetup(final Organization org, Long newGrievanceAdminUserId) {
+		Long id = org.getId();
+		if (id > 0) {
+			LOGGER.info("Org Id: {}", id);
+		}
+		if (newGrievanceAdminUserId > 0) {
+			LOGGER.info("User Id : {}", newGrievanceAdminUserId);
+		}
+		String password = null;
+		int adminRoleId = 0;
+		try {
+			for (Constants.userRole roleName : Constants.userRole.values()) {
+				Boolean value = jdbcTemplate.queryForObject(Sql.Organization.CHECK_IF_ROLE_EXISTS,
+						new Object[] { String.valueOf(roleName), id }, Boolean.class);
+				if (!value) {
+					jdbcTemplate.update(Sql.Organization.ADD_ORG_ROLES, new Object[] { String.valueOf(roleName), id });
+				}
+				List<Integer> actions = new ArrayList<>();
+				Integer roleId = jdbcTemplate.queryForObject(Sql.Organization.GET_ROLE_ID_BY_ORG,
+						new Object[] { id, String.valueOf(roleName) }, Integer.class);
+				if (String.valueOf(roleName).equals(Common.GRIEVANCE_ADMIN)) {
+					adminRoleId = roleId;
+					actions = Constants.getGrievanceAdminActions();
+				}
+				if (String.valueOf(roleName).equals(Common.NODAL_OFFICER)) {
+					actions = Constants.getNodalOfficerActions();
+				}
+				for (int i = 0; i < actions.size(); i++) {
+					jdbcTemplate.update(Sql.Organization.ADD_ROLE_PERMISSION, new Object[] { roleId, actions.get(i) });
+				}
+			}
+			jdbcTemplate.update(Sql.Organization.NEW_GRIEVANCE_ADMIN_ROLE, new Object[] { newGrievanceAdminUserId, adminRoleId });
+			MasterDataManager.getAllUserRoles();
+			jdbcTemplate.update(Sql.Organization.FIRST_ADMIN_COMP, new Object[] { id, newGrievanceAdminUserId });
+			MasterDataManager.getUserOrgMap().put(newGrievanceAdminUserId, id);
+			password = ProjectUtil.getRandomStringVal().trim();
+			if (!StringUtils.isBlank(password)) {
+				LOGGER.info("New Admin Password : {}", password);
+			}
+			String encodedPwd = OneWayHashing.encryptVal(password);
+			jdbcTemplate.update(Sql.Organization.NEW_GRIEVANCE_ADMIN_PSWRD, new Object[] { encodedPwd, newGrievanceAdminUserId });
+			if (!StringUtils.isBlank(password)) {
+				LOGGER.info("Password : {}", password);
+			}
+			sendAdminMail(org.getAdminDetails().get(0).getUsername(), org.getAdminDetails().get(0).getName(), password);
+		} catch (Exception e) {
+			LOGGER.error(
+					String.format("Encountered an Exception while setting up an Organization :  %s", e.getMessage()));
+		}
+
+	}
+	public void orgSetup(final Organization org, Long newGrievanceAdminUserId, Long newNodalOfficeUserId) {
 		Long id = org.getId();
 		if (id > 0) {
 			LOGGER.info("Org Id: {}", id);
